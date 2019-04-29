@@ -5,7 +5,20 @@ import os
 import numpy as np
 
 class page_frame(object):
+    """
+	Class name: page_frame
+	List of functions: __init__, resetLastAccess, incLastAccess, getLastAccess, incAccessCount,
+                        getFLoaded, setFLoaded, getMemInstruction
+	Description: Holds all of the data for a page frame for use in both physical and virtual memory
+	"""
     def __init__(self, **kwargs):
+        """
+		Name: __init__
+		Input: kwargs
+		Output: None
+		Description: Sets initial variables in use by the many other functions. Takes in the process cycle
+                    time and assigns that to when the program was first loaded into memory (firstLoaded).
+		"""
         self.last_access = 0    # time stamp
         self.access_count = 0   # sum of accesses
         if 'memInstruction' in kwargs: #pID and virtual mem address
@@ -40,6 +53,11 @@ class page_frame(object):
         return self.memInstruction
 
 class physical_memory(object):
+    """
+	Class name: physical_memory
+	List of functions: __init__, incPageFaultTotal, getPageFaultTotal, newPCycle, loadPFrame
+	Description: Simulates a virtual memory of size equal to mem_size. 
+	"""
     def __init__(self,mem_size):
         self.mem_size = int(mem_size)
         self.pageFaultTotal = 0
@@ -48,18 +66,44 @@ class physical_memory(object):
         self.pCycleNum = -1
 
     def incPageFaultTotal (self):
+        """
+		Name: inPageFaultTotal
+		Input: None
+		Output: None
+		Description: Increments when a page fault has been detected in when loading a new page frame
+                    into physical memory.
+		"""
         self.pageFaultTotal += 1
 
     def getPageFaultTotal (self):
+        """
+		Name: getPageFaultTotal
+		Input: None
+		Output: pageFaultTotal (int)
+		Description: Returns the total number of page faults for final print of the simulation.
+		"""
         return self.pageFaultTotal
 
     def newPCycle (self): #new process cycle
+        """
+		Name: newPCycle
+		Input: None
+		Output: None
+		Description: Represents a new processor cycle as a new page frame is processed to be loaded
+                    into memory. pCycleNum indicates the process cycle time counter and iterates through
+                    the memory table adding 1 to the last access time of each 
+		"""
         self.pCycleNum+=1
         for instruction in self.mem_table:
             self.mem_table[instruction].incLastAccess()
 
     def loadPFrame (self,pFrame, **kwargs):
-        #self.testNum+=1
+        """
+		Name: loadPFrame
+		Input: kwargs
+		Output: Boolean or memInstruct(str)
+		Description: 
+		"""
         memInstruct = pFrame.getMemInstruction()
         if 'replacementType' in kwargs:
             replacementType = kwargs['replacementType']
