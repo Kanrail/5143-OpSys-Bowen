@@ -125,71 +125,71 @@ if __name__=='__main__':
 
     path = args['directory']
 
-    #try:
-    for r, d, f in os.walk(path):
-        for file in f:
-            name, ext = file.split('.')
-            s, run, np1, vm, pm = name.split('_')
-            instList = []
-            fileOpen = open(path+'/'+file, 'r')
-            fifoTotal, LRUTotal, LFUTotal, randTotal = 0,0,0,0
-            for line in fileOpen:
-                for word in line.split():
-                    instList.append(word)
-            for i in range(4):
-                physMem = physical_memory(pm)
-                tempInstList = instList
-                virtMem = {}
-                if i == 0:
-                    replaceType = 'fInfOut'
-                    print(replaceType)
-                elif i == 1:
-                    replaceType = 'LRU'
-                    print(replaceType)
-                elif i == 2:
-                    replaceType = 'LFU'
-                    print(replaceType)
-                else:
-                    replaceType = 'random'
-                    print(replaceType)
-                for instruction in tempInstList:
-                    physMem.newPCycle()
-                    if instruction not in virtMem:
-                        virtMem[instruction] = page_frame(memInstruction=instruction)
+    try:
+        for r, d, f in os.walk(path):
+            for file in f:
+                name, ext = file.split('.')
+                s, run, np1, vm, pm = name.split('_')
+                instList = []
+                fileOpen = open(path+'/'+file, 'r')
+                fifoTotal, LRUTotal, LFUTotal, randTotal = 0,0,0,0
+                for line in fileOpen:
+                    for word in line.split():
+                        instList.append(word)
+                for i in range(4):
+                    physMem = physical_memory(pm)
+                    tempInstList = instList
+                    virtMem = {}
+                    if i == 0:
+                        replaceType = 'fInfOut'
+                        print(replaceType)
+                    elif i == 1:
+                        replaceType = 'LRU'
+                        print(replaceType)
+                    elif i == 2:
+                        replaceType = 'LFU'
+                        print(replaceType)
                     else:
-                        #virtMem[instruction].incAccessCount()
-                        pass
-                    returnType = physMem.loadPFrame(virtMem[instruction], replacementType=replaceType)
-                    if isinstance(returnType, bool):
-                        pass#Is either already in pm, or loaded into empty pm slot
-                    elif isinstance(returnType, str):
-                        pass#This is where virtual memory would vbit would be updated, moved out of pm
-                if i == 0:
-                    fifoTotal = physMem.getPageFaultTotal()
-                    print (fifoTotal)
-                elif i == 1:
-                    LRUTotal = physMem.getPageFaultTotal()
-                    print (LRUTotal)
-                elif i == 2:
-                    LFUTotal = physMem.getPageFaultTotal()
-                    print (LFUTotal)
-                else:
-                    randomTotal = physMem.getPageFaultTotal()
-                    print (randomTotal)
-            #print pyplot of results for that file here
-            replaceTypes = ('FIFO', 'LRU', 'LFU', 'Random')
-            totals = [int(fifoTotal),int(LRUTotal),int(LFUTotal),int(randomTotal)]
-            y_pos = np.arange(len(replaceTypes))
-            plt.ylabel('# of Page Faults')
-            plt.xlabel('Replacement Scheme')
-            plt.bar(y_pos, totals,align="center",alpha=.5)
-            plt.tight_layout(pad=4)
-            plt.xticks(y_pos,replaceTypes)
-            plt.title('Simulation ' + file)
-            #plt.show()
-            plt.savefig(file+'.png')
+                        replaceType = 'random'
+                        print(replaceType)
+                    for instruction in tempInstList:
+                        physMem.newPCycle()
+                        if instruction not in virtMem:
+                            virtMem[instruction] = page_frame(memInstruction=instruction)
+                        else:
+                            #virtMem[instruction].incAccessCount()
+                            pass
+                        returnType = physMem.loadPFrame(virtMem[instruction], replacementType=replaceType)
+                        if isinstance(returnType, bool):
+                            pass#Is either already in pm, or loaded into empty pm slot
+                        elif isinstance(returnType, str):
+                            pass#This is where virtual memory would vbit would be updated, moved out of pm
+                    if i == 0:
+                        fifoTotal = physMem.getPageFaultTotal()
+                        print (fifoTotal)
+                    elif i == 1:
+                        LRUTotal = physMem.getPageFaultTotal()
+                        print (LRUTotal)
+                    elif i == 2:
+                        LFUTotal = physMem.getPageFaultTotal()
+                        print (LFUTotal)
+                    else:
+                        randomTotal = physMem.getPageFaultTotal()
+                        print (randomTotal)
+                #print pyplot of results for that file here
+                replaceTypes = ('FIFO', 'LRU', 'LFU', 'Random')
+                totals = [int(fifoTotal),int(LRUTotal),int(LFUTotal),int(randomTotal)]
+                y_pos = np.arange(len(replaceTypes))
+                plt.ylabel('# of Page Faults')
+                plt.xlabel('Replacement Scheme')
+                plt.bar(y_pos, totals,align="center",alpha=.5)
+                plt.tight_layout(pad=4)
+                plt.xticks(y_pos,replaceTypes)
+                plt.title('Simulation ' + file)
+                #plt.show()
+                plt.savefig(file+'.png')
 
-        #Will repeat for every file in given directory
-    #except:
-    #    print("something fucked up")
-    #    pass
+            #Will repeat for every file in given directory
+    except:
+        print("Something went wrong. Please try again with a valid directory.")
+        pass
