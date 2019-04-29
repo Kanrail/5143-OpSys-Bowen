@@ -18,7 +18,7 @@ class page_frame(object):
 		Output: None
 		Description: Sets initial variables in use by the many other functions. Takes in the process cycle
                     time and assigns that to when the program was first loaded into memory (firstLoaded).
-		"""
+	"""
         self.last_access = 0    # time stamp
         self.access_count = 0   # sum of accesses
         if 'memInstruction' in kwargs: #pID and virtual mem address
@@ -104,16 +104,14 @@ class physical_memory(object):
 		Output: Boolean or memInstruct(str)
 		Description: 
 		"""
-        memInstruct = pFrame.getMemInstruction()
-        if 'replacementType' in kwargs:
+        memInstruct = pFrame.getMemInstruction() #gets the string of the instruction
+        if 'replacementType' in kwargs: #populates the replacement type for the load
             replacementType = kwargs['replacementType']
         if memInstruct in self.mem_table: #if the instruction is already in physical memory
-            #print('Mem in table')
             self.mem_table[memInstruct].incAccessCount()
             self.mem_table[memInstruct].resetLastAccess()
             return True
         elif len(self.mem_table) < self.mem_size: #if physical memory isn't full
-            #print('Mem Not full')
             pFrame.setFLoaded(self.pCycleNum)
             self.mem_table[memInstruct] = pFrame
             self.mem_table[memInstruct].incAccessCount()
@@ -122,36 +120,43 @@ class physical_memory(object):
         else: #replace via specified scheme in replacementType
             replacedPFrame = ''
             self.incPageFaultTotal()
-            if replacementType == 'fInfOut':
+            if replacementType == 'fInfOut': #First in first out
                 for instruction in self.mem_table:
-                    if replacedPFrame == '':
+                    if replacedPFrame == '': #If at beginning of search for replacement
                         replacedPFrame = self.mem_table[instruction]
                     else:
                         if self.mem_table[instruction].getFLoaded() < replacedPFrame.getFLoaded():
                             replacedPFrame = self.mem_table[instruction]
-            elif replacementType == 'LRU':
+            elif replacementType == 'LRU': #Least Recently Used
                 for instruction in self.mem_table:
-                    if replacedPFrame == '':
+                    if replacedPFrame == '': #If at beginning of search for replacement
                         replacedPFrame = self.mem_table[instruction]
                     else:
                         if self.mem_table[instruction].getLastAccess() > replacedPFrame.getLastAccess():
                             replacedPFrame = self.mem_table[instruction]
-            elif replacementType == 'LFU':
+            elif replacementType == 'LFU': #Least Frequently Used
                 for instruction in self.mem_table:
-                    if replacedPFrame == '':
+                    if replacedPFrame == '': #If at beginning of search for replacement
                         replacedPFrame = self.mem_table[instruction]
                     else:
                         if self.mem_table[instruction].getAccessCount() <  replacedPFrame.getAccessCount():
                             replacedPFrame = self.mem_table[instruction]
-            elif replacementType == 'random':
+            elif replacementType == 'random': #Random Replacement
                 randomChoice = random.choice(list(self.mem_table.items()))
                 replacedPFrame = randomChoice[1]
-            del self.mem_table[replacedPFrame.getMemInstruction()]
-            pFrame.setFLoaded(self.pCycleNum)
-            self.mem_table[memInstruct] = pFrame
-            return memInstruct
+            del self.mem_table[replacedPFrame.getMemInstruction()] #Removes instruction to be replaced
+            pFrame.setFLoaded(self.pCycleNum) #Marks the time the new instruction is loaded into memory
+            self.mem_table[memInstruct] = pFrame #Places new instruction into memory
+            return memInstruct #return the string of the process as confirmation of completion
 
 def myargs(sysargs):
+	"""
+	Name: myargs
+	Input: sysargs
+	Output: args
+	Description: Reads in the directory from command line.
+		e.g. "python driver.py directory="./MemTest"
+	"""
     args = {}
 
     for val in sysargs[1:]:
@@ -161,63 +166,63 @@ def myargs(sysargs):
 
 if __name__=='__main__':
 
-    args = myargs(sys.argv)
+    args = myargs(sys.argv) #Get the directory from command line
 
-    if not 'directory' in args:
+    if not 'directory' in args: #If directory wasn't in the command, error and exit program
         usage("Error: directory not on command line...")
         sys.exit()
 
     path = args['directory']
 
     try:
-        for r, d, f in os.walk(path):
-            for file in f:
-                name, ext = file.split('.')
-                s, run, np1, vm, pm = name.split('_')
-                instList = []
+        for r, d, f in os.walk(path): #Traverses everything in specified directory
+            for file in f: #For each file in that directory
+                name, ext = file.split('.') #Removes the .dat from end of file name
+               #Parses the filename (sim #, number of processes, virt mem size, physical memory size)
+		s, run, np1, vm, pm = name.split('_') 
+                instList = [] #Instruction List
                 fileOpen = open(path+'/'+file, 'r')
                 fifoTotal, LRUTotal, LFUTotal, randTotal = 0,0,0,0
-                for line in fileOpen:
-                    for word in line.split():
+                for line in fileOpen: #Reads in every line in the file if more than one
+                    for word in line.split(): #splits each instruction and appends them to the list
                         instList.append(word)
-                for i in range(4):
+                for i in range(4): #Iterates 4 times, once for each replacement algorithm
                     physMem = physical_memory(pm)
                     tempInstList = instList
                     virtMem = {}
-                    if i == 0:
+                    if i == 0: #First in First out
                         replaceType = 'fInfOut'
                         print(replaceType)
-                    elif i == 1:
+                    elif i == 1: # Least Recently Used
                         replaceType = 'LRU'
                         print(replaceType)
-                    elif i == 2:
+                    elif i == 2: #Least Frequently Used
                         replaceType = 'LFU'
                         print(replaceType)
-                    else:
+                    else: #Random Replacement
                         replaceType = 'random'
                         print(replaceType)
-                    for instruction in tempInstList:
-                        physMem.newPCycle()
-                        if instruction not in virtMem:
+                    for instruction in tempInstList: #Runs through each instruction
+                        physMem.newPCycle() #New processor cycle
+                        if instruction not in virtMem: #Loads instruction into virtual memory
                             virtMem[instruction] = page_frame(memInstruction=instruction)
                         else:
-                            #virtMem[instruction].incAccessCount()
                             pass
                         returnType = physMem.loadPFrame(virtMem[instruction], replacementType=replaceType)
                         if isinstance(returnType, bool):
                             pass#Is either already in pm, or loaded into empty pm slot
                         elif isinstance(returnType, str):
                             pass#This is where virtual memory would vbit would be updated, moved out of pm
-                    if i == 0:
+                    if i == 0: #First in First out total output
                         fifoTotal = physMem.getPageFaultTotal()
                         print (fifoTotal)
-                    elif i == 1:
+                    elif i == 1: #Least Recently Used total output
                         LRUTotal = physMem.getPageFaultTotal()
                         print (LRUTotal)
-                    elif i == 2:
+                    elif i == 2: #Least Frequently Used total output
                         LFUTotal = physMem.getPageFaultTotal()
                         print (LFUTotal)
-                    else:
+                    else: #Random total output
                         randomTotal = physMem.getPageFaultTotal()
                         print (randomTotal)
                 #print pyplot of results for that file here
@@ -232,8 +237,9 @@ if __name__=='__main__':
                 plt.title('Simulation ' + file)
                 #plt.show()
                 plt.savefig(file+'.png')
+		plt.clf() #Clears plot buffer between runs
 
             #Will repeat for every file in given directory
-    except:
+    except: #If any errors at all occur
         print("Something went wrong. Please try again with a valid directory.")
         pass
